@@ -29,20 +29,19 @@
             <div class="card-body">
                 <div class="row mb-3 align-items-end"> 
                     <div class="col-md-4">
-                        <span class="filter-text">Filter Tipe</span>
-                        <el-checkbox-group v-model="filter.pengobatan_type" @change="fetchData">
-                            <el-checkbox label="umum" border>Umum</el-checkbox>
-                            <el-checkbox label="bpjs" border>BPJS</el-checkbox>
-                        </el-checkbox-group>
+                        <span class="filter-text">Filter Tanggal</span>
+                        <el-date-picker
+                            v-model="filter.tanggal"
+                            type="daterange"
+                            range-separator="To"
+                            format="dd MMMM yyyy"
+                            value-format="yyyy-MM-dd"
+                            @change="fetchData"
+                            start-placeholder="Tgl Mulai"
+                            end-placeholder="Tgl Akhir">
+                        </el-date-picker>
                     </div>
-                    <div class="col-md-4">
-                        <span class="filter-text">Filter Jenis Kelamin</span>
-                        <el-checkbox-group v-model="filter.gender" @change="fetchData">
-                            <el-checkbox label="laki_laki" border>Laki - Laki</el-checkbox>
-                            <el-checkbox label="perempuan" border>Perempuan</el-checkbox>
-                        </el-checkbox-group>
-                    </div>
-                    <div class="col-md-4">
+                    <div class="offset-md-4 col-md-4">
                         <div
                             class="btn-group float-right"
                         >
@@ -76,9 +75,8 @@
                             {{ meta.per_page * (meta.current_page - 1) + scope.$index + 1}}
                         </template>
                     </el-table-column>
-                    <el-table-column prop="code" label="Kode" width="120"></el-table-column>
-                    <el-table-column prop="profile.name" label="Nama Rekam Medis">
-                        <template slot-scope="scope">
+                    <el-table-column prop="code" label="Kode" width="180">
+                         <template slot-scope="scope">
                             <a
                                 @click.prevent="
                                     $router.push({
@@ -90,21 +88,21 @@
                                 "
                                 href="#"
                             >
-                                {{ scope.row.profile.name }}
+                                {{ scope.row.code }}
                             </a>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="profile.phone" label="Phone">
-                    </el-table-column>
-                    <el-table-column prop="profile.gender" label="Jenis Kelamin">
+                    <el-table-column prop="tanggal" label="Tanggal"></el-table-column>
+                    <el-table-column prop="patient.profile.name" label="Pasien"></el-table-column>
+                    <el-table-column prop="medical_record_files" label="Dokumen">
                         <template slot-scope="scope">
-                            {{ scope.row.profile.gender  == 'laki_laki' ? 'Laki - Laki' : 'Perempuan' }}
+                           <el-tag effect="plain" type="primary"> 
+                                <i class="el-icon-tickets"></i>
+                                {{ scope.row.medical_record_files.length }} dokumen
+                            </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="pengobatan_type" label="Tipe">
-                        <template slot-scope="scope">
-                            <span style="text-transform: capitalize;">{{ scope.row.pengobatan_type }}</span>
-                        </template>
+                       
                     </el-table-column>
                     <el-table-column prop="actions" label="Aksi">
                         <template slot-scope="scope">
@@ -192,7 +190,6 @@ export default {
                     per_page: this.meta.per_page,
                     order_by: this.order_meta.order_by,
                     order: this.order_meta.order,
-                    relations: "profile",
                     ...this.filter,
                 },
                 cancelToken: cancelSource.token,
@@ -300,5 +297,8 @@ export default {
 }
 .medicalrecord-list .el-checkbox{
     margin-right: 0 !important;
+}
+.medicalrecord-list .el-range-separator {
+    width: 10% !important;
 }
 </style>

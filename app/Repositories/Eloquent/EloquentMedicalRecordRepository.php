@@ -26,7 +26,7 @@ class EloquentMedicalRecordRepository extends EloquentBaseRepository implements 
                 $patient->whereHas('profile', function ($profile) use ($params) {
                     $profile->where('name', 'like', '%' . $params['search'] . '%');
                 })
-                ->where('code', 'like', '%' . $params['search'] . '%');
+                ->orWhere('code', 'like', '%' . $params['search'] . '%');
 
             })
             
@@ -36,14 +36,10 @@ class EloquentMedicalRecordRepository extends EloquentBaseRepository implements 
         })
 
 
-        ->when(isset($params['created_at']), function ($query) use ($params) {
-            $betweens = [
-                date('Y-m-01', strtotime($params['created_at'])),
-                date('Y-m-t 23:59:59', strtotime($params['created_at'])),
-            ];
-
-            return $query->whereBetween('created_at', $betweens);
-        });
+        ->when(isset($params['tanggal']), function ($query) use ($params) {
+            return $query->whereBetween('tanggal', $params['tanggal']);
+        })
+        ->orderBy('created_at', 'desc');
 
         return $medical_records->paginate(
             isset($params['per_page']) ? $params['per_page'] : 10,

@@ -13,7 +13,7 @@ class MedicalRecord extends Model implements HasMedia
 {
     use HasFactory, AutoNumberTrait , InteractsWithMedia;
 
-    protected $fillable = ['code' , 'patient_id' , 'created_by' , 'updated_by'];
+    protected $fillable = ['code'  ,'tanggal', 'patient_id' , 'created_by' , 'updated_by'];
 
     public static function boot()
     {

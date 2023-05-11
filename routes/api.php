@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\MedicalRecordController;
 use App\Http\Controllers\Api\PatientController;
@@ -29,6 +30,7 @@ Route::post('/login' , [LoginController::class , 'login'])->name('api.login');
 
 Route::group(['middleware' => 'auth:sanctum'] , function() {
     Route::post('/logout', [LoginController::class, 'logout'])->name('api.logout');
+    Route::get('/dashboard', [HomeController::class, 'index'])->name('api.dashboard');
 
     //User
     Route::prefix('users')->apiResource('user' , UserController::class , ['as' => 'api']);

@@ -20,7 +20,7 @@
     <link href="{{ asset(mix('css/app.css')) }}" rel="stylesheet">
 </head>
 
-<body>
+<body id="page-top">
     <div id="app">
     </div>
 

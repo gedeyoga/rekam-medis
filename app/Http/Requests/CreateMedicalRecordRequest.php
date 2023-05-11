@@ -23,9 +23,26 @@ class CreateMedicalRecordRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            'patient_id' => 'required',
-            'files' => 'required|array',
+        $validation = [
+            'new_patient' => 'required',
+            'tanggal' => 'required',
+            'medical_files' => 'required|array',
         ];
+
+        if(boolval($this->get('new_patient'))) {
+            $validation_patient = [
+                'profile.name' => 'required|string',
+                'profile.nik' => 'string|min:16|nullable',
+                'profile.address' => 'required|string',
+                'profile.phone' => 'string',
+                'profile.place_of_birth' => 'required',
+                'profile.date_of_birth' => 'required',
+                'profile.gender' => 'required',
+            ];
+
+            $validation = array_merge($validation,  $validation_patient);
+        }
+
+        return $validation;
     }
 }

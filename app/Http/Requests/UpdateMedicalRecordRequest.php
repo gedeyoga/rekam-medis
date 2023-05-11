@@ -26,6 +26,8 @@ class UpdateMedicalRecordRequest extends FormRequest
         return [
             'id' => 'required',
             'patient_id' => 'required',
+            'tanggal' => 'required',
+            // 'medical_files' => 'required|array',
         ];
     }
 }

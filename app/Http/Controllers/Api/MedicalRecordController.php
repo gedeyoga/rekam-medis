@@ -8,8 +8,10 @@ use App\Http\Requests\UpdateMedicalRecordRequest;
 use App\Http\Resources\MedicalRecordTransformer;
 use App\Models\MedicalRecord;
 use App\Repositories\MedicalRecordRepository;
+use App\Repositories\PatientRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MedicalRecordController extends Controller
 {
@@ -17,12 +19,14 @@ class MedicalRecordController extends Controller
     protected $medical_record_repo;
     protected $user_repo;
     protected $medical_repo;
+    protected $patient_repo;
 
     public function __construct()
     {
         $this->medical_record_repo = app(MedicalRecordRepository::class);
         $this->user_repo = app(UserRepository::class);
-        $this->medical_repo = app(UserRepository::class);
+        $this->medical_repo = app(MedicalRecordRepository::class);
+        $this->patient_repo = app(PatientRepository::class);
     }
 
     /**
@@ -46,15 +50,45 @@ class MedicalRecordController extends Controller
      */
     public function store(CreateMedicalRecordRequest $request)
     {
-        $data = $request->except(['files']);
+        $data = $request->except(['files' , 'profile' , 'new_patient']);
+        
+        DB::beginTransaction();
+        try {
+            if (boolval($request->get('new_patient'))) {
+                $profile = $request->get('profile');
+                $profile['email'] = time() . '@testing.test';
+                $profile['password'] = '12345678';
 
-        $medical_record = $this->medical_repo->create($data);
+                $user = $this->user_repo->create($profile);
 
-        $medical_record->addMultipleMediaFromRequest('files')->toMediaCollection('medical_records');
+                $profile['user_id'] = $user->id;
+                $patient = $this->patient_repo->create($profile);
 
-        return response()->json([
-            'message' => 'Rekam medis berhasil dibuat!',
-        ]);
+                $data['patient_id'] = $patient->id;
+            }
+
+
+            $medical_record = $this->medical_repo->create($data);
+
+            if ($request->hasFile('medical_files')) {
+                $medical_record->addMultipleMediaFromRequest(['medical_files'])
+                ->each(function ($fileAdder) {
+                    $fileAdder->toMediaCollection('medical_records');
+                });
+            }
+            DB::commit();
+            return response()->json([
+                'message' => 'Rekam medis berhasil dibuat!',
+            ]);
+        } catch (\Exception $th) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+
+        
     }
 
     /**
@@ -63,10 +97,10 @@ class MedicalRecordController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(MedicalRecord $medical_record)
+    public function show(MedicalRecord $medicalrecord)
     {
-        $medical_record->load(['patient.profile' , 'staff_created', 'staff_updated']);
-        return new MedicalRecordTransformer($medical_record);
+        $medicalrecord->load(['patient.profile' , 'staff_created', 'staff_updated']);
+        return new MedicalRecordTransformer($medicalrecord);
     }
 
     /**
@@ -76,16 +110,26 @@ class MedicalRecordController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateMedicalRecordRequest $request, MedicalRecord $medical_record)
+    public function update(UpdateMedicalRecordRequest $request, MedicalRecord $medicalrecord)
     {
-        $data = $request->except(['files']);
+        $data = $request->only(['code', 'tanggal', 'patient_id']);
 
-        $this->medical_repo->update( $medical_record, $data);
+        //Menghapus file yang telah dihapus oleh user
+        $get_new_media = array_map(fn($media) => (int) $media['id'] , $request->medical_record_files); 
 
-        if($request->get('files')) {
-            if(count($request->files) > 0) {
-                $medical_record->addMultipleMediaFromRequest('files')->toMediaCollection('medical_records');
+        foreach ($medicalrecord->getMedia('medical_records') as $media) {
+            if(!in_array($media->id , $get_new_media)) {
+                $media->delete();
             }
+        }
+
+        $medicalrecord = $this->medical_repo->update( $medicalrecord, $data);
+
+        if ($request->hasFile('medical_files')) {
+            $medicalrecord->addMultipleMediaFromRequest(['medical_files'])
+            ->each(function ($fileAdder) {
+                $fileAdder->toMediaCollection('medical_records');
+            });
         }
 
         return response()->json([
@@ -99,9 +143,9 @@ class MedicalRecordController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(MedicalRecord $medical_record)
+    public function destroy(MedicalRecord $medicalrecord)
     {
-        $this->medical_record_repo->destroy($medical_record);
+        $this->medical_record_repo->destroy($medicalrecord);
 
         return response()->json([
             'message' => 'Rekam Medis berhasil dihapus!'
